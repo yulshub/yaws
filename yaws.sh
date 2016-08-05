@@ -25,7 +25,7 @@ function init
 if [ ! -d $CONFIG_PATH ];then mkdir -p $CONFIG_PATH; fi
 #Perfiles de AWS
 cat ~/.aws/credentials | grep "\\[" | grep -v default | sed "s/\[//g" | sed "s/\]//g"  | tr '[:lower:]' '[:upper:]' > $PROFILE_LIST_FILE
-sort -o $PROFILE_LIST_FILE $PROFILE_LIST_FILE 
+sort -f $PROFILE_LIST_FILE -o $PROFILE_LIST_FILE 
 }
 
 function printProfilesMENU
@@ -65,7 +65,7 @@ while read line; do
     echo -e "$ID;$NAME;$PLATFORM;$STATUS;$PEM.pem;$PUBLICIP;$DNS" >> ${INSTANCES_MENU_FILE}_$1
     #echo "$PEM" >> ${INSTANCES_MENU_FILE}_$1
 done < ${INSTANCES_LIST_FILE}_$1
-sort -o -k 2 --field-separator=';' ${INSTANCES_MENU_FILE}_$1 ${INSTANCES_MENU_FILE}_$1
+sort -k 2 -t';' -f ${INSTANCES_MENU_FILE}_$1 -o ${INSTANCES_MENU_FILE}_$1
 
 }
 
