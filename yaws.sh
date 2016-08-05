@@ -74,7 +74,7 @@ MODE=$1
 createProfilesMenu
 until [ "$selection" = "q" ]; do
      printProfilesMENU
-     read -nr 2 selection
+     read -r -n 2 selection
      echo ""
      case $selection in
          q ) exit 0;;
@@ -200,7 +200,7 @@ PROFILE_SELECTED=$1
 createEC2InstancesMENU $PROFILE_SELECTED
 until [ "$selection" = "b" ]; do
      printEC2InstancesMENU $PROFILE_SELECTED
-     read -nr 2 selection
+     read -r -n 2 selection
      case $selection in
          b ) break;;
          q ) exit 0;;
@@ -261,7 +261,7 @@ echo -e "2. Copy File(s) ${bold}FROM${reset} $PROFILE_SELECTED -> $INSTANCE_NAME
 echo -e "3. Copy File(s) ${bold}TO${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
 echo -e "4. Execute command ${bold}IN${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
 echo -e "5. View log(s) ${bold}FROM${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
-echo -e "6. View Process running${bold}IN${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
+echo -e "6. View Proces(s) running ${bold}IN${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
 echo -e "7. Network tools"
 echo -e "8. Monitoring tools"
 echo -e "9. Manage Tools"
@@ -286,15 +286,23 @@ until [ "$selection" = "b" ]; do
          2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
              read -er -p"Target path : "  TARGET_FILES
              scp -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES;;   
-         3 ) echo "Has seleccionado SSH";;   
-         4 ) echo "Has seleccionado SSH";;   
-         5 ) echo "Has seleccionado SSH";;   
-         6 ) echo "Has seleccionado SSH";;   
+         3 ) read -er -p"Local Files : " SOURCE_FILES
+             read -er -p"Target path in $PROFILE_SELECTED -> $INSTANCE_NAME : "  TARGET_FILES
+             scp -i $(head -1 $PEM_FILE) $SOURCE_FILES ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$TARGET_FILES;;   
+         4 ) read -er -p"Type command : " COMMAND
+             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') $COMMAND 
+         5 ) read -er -p"Type absolute path to log : " LOG_PATH
+             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') less $LOG_PATH
+             read -n 1  
+         6 ) read -er -p"Write filter, empty to all : " GREP_FILTER
+             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') ps -fea | grep $GREP_FILTER
+             read -n 1
          7 ) echo "Network tools";;   
          8 ) echo "Monitoring tools";;   
          9 ) echo "Manage tools";;   
          * ) continue;;
      esac
+
 done
 }
 
