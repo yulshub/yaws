@@ -52,6 +52,10 @@ function createProfilesMenu
 {
 #Perfiles de AWS
 cat ~/.aws/credentials | grep "\\[" | grep -v default | sed "s/\[//g" | sed "s/\]//g"  | tr '[:lower:]' '[:upper:]' > $PROFILE_LIST_FILE
+if [ ! -s ${PROFILE_LIST_FILE} ]; then
+    echo "No profile found in ~/.aws/credentials"
+    exit 1
+fi
 sort -f $PROFILE_LIST_FILE -o $PROFILE_LIST_FILE 
 }
 
