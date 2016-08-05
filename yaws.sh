@@ -74,7 +74,7 @@ MODE=$1
 createProfilesMenu
 until [ "$selection" = "q" ]; do
      printProfilesMENU
-     read -n 2 selection
+     read -nr 2 selection
      echo ""
      case $selection in
          q ) exit 0;;
@@ -200,7 +200,7 @@ PROFILE_SELECTED=$1
 createEC2InstancesMENU $PROFILE_SELECTED
 until [ "$selection" = "b" ]; do
      printEC2InstancesMENU $PROFILE_SELECTED
-     read -n 2 selection
+     read -nr 2 selection
      case $selection in
          b ) break;;
          q ) exit 0;;
@@ -283,8 +283,8 @@ until [ "$selection" = "b" ]; do
          q ) exit 0;;
          r ) continue;; #createEC2ManageInstanceMENU $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress');;   
-         2 ) read -er -p"Archivos en $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
-             read -er -p"Ruta local : "  TARGET_FILES
+         2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
+             read -er -p"Target path : "  TARGET_FILES
              scp -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES;;   
          3 ) echo "Has seleccionado SSH";;   
          4 ) echo "Has seleccionado SSH";;   
