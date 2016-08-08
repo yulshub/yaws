@@ -291,21 +291,17 @@ rm -rf $MENU_FILE
     PEM=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "KeyName")
     AUX_LAUNCH_TIME=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "LaunchTime")
     SECURITY_GROUPS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "SecurityGroups[].GroupName") 
-    ECURITY_GROUPS_IDS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "SecurityGroups[].GroupId") 
+    SECURITY_GROUPS_IDS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "SecurityGroups[].GroupId") 
 
     LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
     ACTUAL_TIME=$(date "+%s")
     UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME + 720 )))
     echo -e "ID ;: $INSTANCE_SELECTED;Name ;: $NAME" >> $MENU_FILE
     echo -e "Platform ;: $PLATFORM;STATUS ;: $STATUS ($UPTIME)" >> $MENU_FILE
-    echo -e "PublicIP ;: $PUBLICIP;PrivateIP ;: $PRIVATEIP" >> $MENU_FILE
+    echo -e "PublicIP ;: $PUBLIC_IP;PrivateIP ;: $PRIVATE_IP" >> $MENU_FILE
     echo -e "Public DNS ;: $PUBLIC_DNS;Private DNS ;: $PRIVATE_DNS" >> $MENU_FILE
-    echo -e "Security Groups ;: $SECURITY_GROUPS;IPS ;: IPS" >> $MENU_FILE
-
-
-
-
-
+    echo -e "Security Groups ;: $SECURITY_GROUPS;;" >> $MENU_FILE
+    echo -e "Security Groups ID;: $SECURITY_GROUPS_IDS;;" >> $MENU_FILE
 
 }
 
@@ -323,9 +319,9 @@ echo "--------------------------------------------------------------------------
 echo -e "AWS EC2 INSTANCES MENU" 
 echo -e "SELECTED PROFILE : ${bold}$PROFILE_SELECTED${reset}"
 echo -e "SELECTED INSTANCE : ${bold}$INSTANCE_SELECTED / $INSTANCE_NAME${reset}"
-echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
 cat $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
-echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
 echo -e "1. Connect via SSH"
 echo -e "2. Copy File(s) ${bold}FROM${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
 echo -e "3. Copy File(s) ${bold}TO${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
