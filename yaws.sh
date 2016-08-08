@@ -6,12 +6,13 @@ CONFIG_PATH="$HOME/.ysh"
 PROFILE_LIST_FILE="$CONFIG_PATH/profiles"
 EC2_INSTANCES_LIST_FILE="$CONFIG_PATH/ec2_instances"
 EC2_INSTANCES_DETAILS_FILE="$CONFIG_PATH/ec2_instances_details"
-EC2_INSTANCES_MENU_FILE="$CONFIG_PATH/Eec2_instances_menu"
+EC2_INSTANCES_MENU_FILE="$CONFIG_PATH/ec2_instances_menu"
 #
 EC2_INSTANCES_PEM_FILES="$CONFIG_PATH/ec2_instances_pem"
 #
-EC2_INSTANCES_MANAGE_MENU_FILE="$CONFIG_PATH/Eec2_instances_manage_menu"
-
+EC2_INSTANCES_MANAGE_MENU_FILE="$CONFIG_PATH/ec2_instances_manage_menu"
+#
+EC2_INSTANCES_SCREEN_DETAILS_FILE="$CONFIG_PATH/ec2_instances_screen_details"
 
 bold=$(tput bold)
 red=$(tput setaf 1)
@@ -264,17 +265,66 @@ PEM_FOUNDED=$(cat $PEM_FILE | wc -l)
 # EC2 Manage Instance
 #**********************************************************************************************************************************************************
 
+function createEC2DetailsScreen
+{
+PROFILE_SELECTED=$1 
+INSTANCE_SELECTED=$2
+
+MENU_FILE=${EC2_INSTANCES_SCREEN_DETAILS_FILE}_$PROFILE_SELECTED
+DETAILS_FILE=${EC2_INSTANCES_DETAILS_FILE}_$PROFILE_SELECTED
+
+#createEC2instancesDetailFile $PROFILE_SELECTED
+
+if [ ! -f $DETAILS_FILE ]; then return 0; fi
+
+rm -rf $MENU_FILE
+
+
+    PUBLIC_DNS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "PublicDnsName")
+    PRIVATE_DNS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "PrivateDnsName")
+    PLATFORM=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "Platform");if [ "$PLATFORM" == "null" ]; then PLATFORM="linux"; fi
+    STATUS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "State.Name")
+    INSTANCETYPE=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "InstanceType")
+    PUBLIC_IP=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "PublicIpAddress")
+    PRIVATE_IP=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "PrivateIpAddress")
+    NAME=$(getKeyValuePropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "Tags" "Key" "Name" "Value")
+    PEM=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "KeyName")
+    AUX_LAUNCH_TIME=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "LaunchTime")
+    SECURITY_GROUPS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "SecurityGroups[].GroupName") 
+    ECURITY_GROUPS_IDS=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "SecurityGroups[].GroupId") 
+
+    LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
+    ACTUAL_TIME=$(date "+%s")
+    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME + 720 )))
+    echo -e "ID ;: $INSTANCE_SELECTED;Name ;: $NAME" >> $MENU_FILE
+    echo -e "Platform ;: $PLATFORM;STATUS ;: $STATUS ($UPTIME)" >> $MENU_FILE
+    echo -e "PublicIP ;: $PUBLICIP;PrivateIP ;: $PRIVATEIP" >> $MENU_FILE
+    echo -e "Public DNS ;: $PUBLIC_DNS;Private DNS ;: $PRIVATE_DNS" >> $MENU_FILE
+    echo -e "Security Groups ;: $SECURITY_GROUPS;IPS ;: IPS" >> $MENU_FILE
+
+
+
+
+
+
+}
+
+
+
 function printEC2ManageInstanceMENU 
 {
 PROFILE_SELECTED=$1
 INSTANCE_SELECTED=$2
 INSTANCE_NAME=$(getKeyValuePropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'Tags' 'Key' 'Name' 'Value')
-MENU_FILE=${EC2_INSTANCES_MENU_FILE}_$PROFILE_SELECTED
+MENU_FILE=${EC2_INSTANCES_SCREEN_DETAILS_FILE}_$PROFILE_SELECTED
+
 clear
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 echo -e "AWS EC2 INSTANCES MENU" 
 echo -e "SELECTED PROFILE : ${bold}$PROFILE_SELECTED${reset}"
 echo -e "SELECTED INSTANCE : ${bold}$INSTANCE_SELECTED / $INSTANCE_NAME${reset}"
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+cat $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 echo -e "1. Connect via SSH"
 echo -e "2. Copy File(s) ${bold}FROM${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
@@ -293,7 +343,7 @@ function EC2InstancesManageMenu
 {
 PROFILE_SELECTED=$1
 INSTANCE_SELECTED=$2   
-#createEC2ManageInstanceMENU $PROFILE_SELECTED $INSTANCE_SELECTED
+createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED
 until [ "$selection" = "b" ]; do
      printEC2ManageInstanceMENU $PROFILE_SELECTED $INSTANCE_SELECTED
      read -n 1 selection
@@ -301,7 +351,7 @@ until [ "$selection" = "b" ]; do
      case $selection in
          b ) break;;
          q ) clear;exit 0;;
-         r ) continue;; #createEC2ManageInstanceMENU $PROFILE_SELECTED $INSTANCE_SELECTED;;
+         r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress');;   
          2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
              read -er -p"Target path : "  TARGET_FILES
