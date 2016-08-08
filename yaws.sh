@@ -32,7 +32,7 @@ if [ ! -d $CONFIG_PATH ];then mkdir -p $CONFIG_PATH; fi
 
 function usage
 {
-    echo "uso: yaws [[-e|--ec2]|[-d|--database]|[-h|--help]]"
+    echo "usage: yaws [[-e|--ec2]|[-d|--database]|[-h|--help]]"
 }
 
 function lines
@@ -40,9 +40,20 @@ function lines
 MAX_LINES=$1
 FROM_LINES=$2
 if [ -z "$2" ];then FROM_LINES=1; fi
-for (( x=$FROM_LINES; x<=$MAX_LINES; x++ )) do echo -e "\n"; done
+MAX_LINES=$(( MAX_LINES - FROM_LINES ))
+for (( x=1; x<=$MAX_LINES; x++ )) do echo -e "\n"; done
 
 }
+
+function displayTime {
+  local T=$1
+  local D=$((T/60/60/24))
+  local H=$((T/60/60%24))
+  local M=$((T/60%60))
+  local S=$((T%60))
+  printf '%04dd ' $D ; printf '%02dh ' $H; printf '%02dm ' $M; printf '%02ds' $S
+}
+
 
 #********************************************************************************************************************************************************** 
 # PROFILES
@@ -81,7 +92,7 @@ until [ "$selection" = "q" ]; do
      read -r -n 2 selection
      echo ""
      case $selection in
-         q ) exit 0;;
+         q ) clear;exit 0;;
          r ) createProfilesMenu;;
          * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
                 PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
@@ -171,8 +182,11 @@ while read INSTANCE_SELECTED; do
     PUBLICIP=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "PublicIpAddress")
     NAME=$(getKeyValuePropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "Tags" "Key" "Name" "Value")
     PEM=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "KeyName")
-
-    echo -e "$INSTANCE_SELECTED;$NAME;$PLATFORM;$STATUS;$PEM.pem;$INSTANCETYPE;$DNS" >> $MENU_FILE
+    AUX_LAUNCH_TIME=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "LaunchTime")
+    LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
+    ACTUAL_TIME=$(date "+%s")
+    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME + 720 )))
+    echo -e "$INSTANCE_SELECTED;$NAME;$PLATFORM;$STATUS;$PEM;$INSTANCETYPE;$DNS;$UPTIME" >> $MENU_FILE
 
 done < $INSTANCES_FILE
 sort -k 2 -t';' -f $MENU_FILE -o $MENU_FILE
@@ -193,6 +207,7 @@ if [ ! -f $MENU_FILE ]; then
 else
     cat -n $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
 fi
+#lines 30 $(wc -l $MENU_FILE)
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 echo -n -e "Choose EC2 instance | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
 }
@@ -207,12 +222,13 @@ until [ "$selection" = "b" ]; do
      read -r -n 2 selection
      case $selection in
          b ) break;;
-         q ) exit 0;;
+         q ) clear;exit 0;;
          r ) createEC2InstancesMENU $PROFILE_SELECTED;;
+             #read -n 1;;
          * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
                 #echo "Seleccionada opcion : $selection"
                 INSTANCE_SELECTED=$(sed "${selection}!d" $MENU_FILE | awk -F ';' '{print $1}')
-                PEM=$(sed "${selection}!d" $MENU_FILE | awk -F ';' '{print $5}')
+                PEM=$(sed "${selection}!d" $MENU_FILE | awk -F ';' '{print $5".pem"}')
                 #echo "Instancia Seleccionada : $INSTANCE_SELECTED"
                 #echo "Buscando PEM : $PEM"
                 createPEMFILE $PROFILE_SELECTED $INSTANCE_SELECTED $PEM
@@ -284,25 +300,25 @@ until [ "$selection" = "b" ]; do
      echo ""
      case $selection in
          b ) break;;
-         q ) exit 0;;
+         q ) clear;exit 0;;
          r ) continue;; #createEC2ManageInstanceMENU $PROFILE_SELECTED $INSTANCE_SELECTED;;
-         1 ) ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress');;   
+         1 ) ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress');;   
          2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
              read -er -p"Target path : "  TARGET_FILES
-             scp -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
+             scp -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
              read -n 1;;     
          3 ) read -er -p"Local Files : " SOURCE_FILES
              read -er -p"Target path in $PROFILE_SELECTED -> $INSTANCE_NAME : "  TARGET_FILES
-             scp -i $(head -1 $PEM_FILE) $SOURCE_FILES ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$TARGET_FILES
+             scp -i "$(head -1 $PEM_FILE)" $SOURCE_FILES ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$TARGET_FILES
              read -n 1;;     
          4 ) read -er -p"Type command : " COMMAND
-             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') $COMMAND
+             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') $COMMAND
              read -n 1;;              
          5 ) read -er -p"Type absolute path to log : " LOG_PATH
-             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') less $LOG_PATH
+             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') less $LOG_PATH
              read -n 1;;  
          6 ) read -er -p"Write filter, empty to all : " GREP_FILTER
-             ssh -i $(head -1 $PEM_FILE) ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') ps -fea | grep "$GREP_FILTER"
+             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') ps -fea | grep "$GREP_FILTER"
              read -n 1;;
          7 ) echo "Network tools";;   
          8 ) echo "Monitoring tools";;   
