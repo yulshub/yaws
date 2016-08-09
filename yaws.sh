@@ -249,7 +249,7 @@ INSTANCE_SELECTED=$2
 PEM_SEARCHED=$3
 
 PEM_FILE=${EC2_INSTANCES_PEM_FILES}_${PROFILE_SELECTED}_${INSTANCE_SELECTED}
-find $HOME/. -name $PEM_SEARCHED -type f > $PEM_FILE
+find $HOME/. -name $PEM_SEARCHED -type f > $PEM_FILE 2>/dev/null
 
 PEM_FOUNDED=$(cat $PEM_FILE | wc -l)
 #-exec stat -s {} \; | awk -F ";" '{OFS = ";"; delete vars; for(i = 1; i <= NF; ++i) { n = index($i, "="); if(n) { vars[substr($i, 1, n - 1)] = substr($i, n + 1) } } Var = vars["Var"] } { print vars["file"],vars["st_mtime"] }')
