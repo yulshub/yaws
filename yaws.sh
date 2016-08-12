@@ -408,14 +408,45 @@ until [ "$selection" = "b" ]; do
              read -n 1;;
          7 ) echo "Network tools";;   
          8 ) echo "Monitoring tools";;   
-         9 ) echo "Manage tools";;   
+         9 ) EC2InstancesManageToolsMenu $PROFILE_SELECTED $INSTANCE_SELECTED;;   
          * ) continue;;
      esac
 
 done
 }
 
+function printEC2ManageToolsInstanceMENUFooter
+{
+PROFILE_SELECTED=$1
+INSTANCE_SELECTED=$2
+INSTANCE_NAME=$3
+echo ""
+echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
+echo -e "1. Reboot instance"
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo -n -e "Choose Option | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
+}
 
+function EC2InstancesManageToolsMenu
+{
+PROFILE_SELECTED=$1
+INSTANCE_SELECTED=$2   
+createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED
+until [ "$selection" = "b" ]; do
+     printEC2ManageInstanceMENUHeader $PROFILE_SELECTED $INSTANCE_SELECTED
+     printEC2ManageToolsInstanceMENUFooter $PROFILE_SELECTED $INSTANCE_SELECTED
+     read -n 1 selection
+     echo ""
+     case $selection in
+         b ) break;;
+         q ) clear;exit 0;;
+         r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
+         1 ) aws ec2 reboot-instances $INSTANCE_SELECTED;;
+         * ) continue;;
+     esac
+
+done
+}
 
 #********************************************************************************************************************************************************** 
 # MAIN
