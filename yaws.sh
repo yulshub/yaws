@@ -151,7 +151,7 @@ PROPERTY_SEARCHED=$3
 DETAILS_FILE=${EC2_INSTANCES_DETAILS_FILE}_$PROFILE_SELECTED
 
 RETURN_VALUE=$(cat $DETAILS_FILE | jq -r ".Reservations[].Instances[] | select(.InstanceId==\"$INSTANCE_SELECTED\") | .$PROPERTY_SEARCHED")
-if [ -z $RETURN_VALUE ];then RETURN_VALUE="-"; fi
+if [ -z "$RETURN_VALUE" ];then RETURN_VALUE="-"; fi
 echo $RETURN_VALUE
 
 }
@@ -441,7 +441,7 @@ until [ "$selection" = "b" ]; do
          b ) break;;
          q ) clear;exit 0;;
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
-         1 ) aws ec2 reboot-instances $INSTANCE_SELECTED;;
+         1 ) aws ec2 reboot-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
          * ) continue;;
      esac
 
