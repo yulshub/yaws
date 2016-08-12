@@ -322,13 +322,22 @@ rm -rf $MENU_FILE
 
 }
 
-
-
 function printEC2ManageInstanceMENU 
 {
 PROFILE_SELECTED=$1
 INSTANCE_SELECTED=$2
 INSTANCE_NAME=$(getKeyValuePropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'Tags' 'Key' 'Name' 'Value')
+
+printEC2ManageInstanceMENUHeader $PROFILE_SELECTED $INSTANCE_SELECTED $INSTANCE_NAME
+printEC2ManageInstanceMENUFooter $PROFILE_SELECTED $INSTANCE_SELECTED $INSTANCE_NAME
+
+}
+
+function printEC2ManageInstanceMENUHeader
+{
+PROFILE_SELECTED=$1
+INSTANCE_SELECTED=$2
+INSTANCE_NAME=$3
 MENU_FILE=${EC2_INSTANCES_SCREEN_DETAILS_FILE}_$PROFILE_SELECTED
 
 clear
@@ -338,6 +347,15 @@ echo -e "SELECTED PROFILE : ${bold}$PROFILE_SELECTED${reset}"
 echo -e "SELECTED INSTANCE : ${bold}$INSTANCE_SELECTED / $INSTANCE_NAME${reset}"
 echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
 cat $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
+
+
+}
+
+function printEC2ManageInstanceMENUFooter
+{
+PROFILE_SELECTED=$1
+INSTANCE_SELECTED=$2
+INSTANCE_NAME=$3
 echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
 echo -e "1. Connect via SSH"
 echo -e "2. Copy File(s) ${bold}FROM${reset} $PROFILE_SELECTED -> $INSTANCE_NAME"
