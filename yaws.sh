@@ -1,7 +1,9 @@
 #!/bin/bash
 VERSION="b0.0.14"
+PID=$$
+CONFIG_PATH="$HOME/.yaws/$PID"
+STATIC_PATH="$HOME/.yaws/static"
 
-CONFIG_PATH="$HOME/.ysh"
 
 PROFILE_LIST_FILE="$CONFIG_PATH/profiles"
 EC2_INSTANCES_LIST_FILE="$CONFIG_PATH/ec2_instances"
@@ -29,6 +31,8 @@ function init
 rm -rf $CONFIG_PATH 
 #Si no existe el directorio de configuración lo creamos
 if [ ! -d $CONFIG_PATH ];then mkdir -p $CONFIG_PATH; fi
+if [ ! -d $STATIC_PATH ];then mkdir -p $STATIC_PATH; fi
+
 }
 
 function usage
@@ -53,6 +57,19 @@ function displayTime {
   local M=$((T/60%60))
   local S=$((T%60))
   printf '%04dd ' $D ; printf '%02dh ' $H; printf '%02dm ' $M; printf '%02ds' $S
+}
+
+function getTimeZone
+{
+if [ -f /etc/timezone ]; then
+  OLSONTZ=`cat /etc/timezone`
+elif [ -h /etc/localtime ]; then
+  OLSONTZ=`readlink /etc/localtime | sed "s/\/usr\/share\/zoneinfo\///"`
+else
+  checksum=`md5sum /etc/localtime | cut -d' ' -f1`
+  OLSONTZ=`find /usr/share/zoneinfo/ -type f -exec md5sum {} \; | grep "^$checksum" | sed "s/.*\/usr\/share\/zoneinfo\///" | head -n 1`
+fi
+echo $OLSONTZ
 }
 
 
@@ -185,8 +202,8 @@ while read INSTANCE_SELECTED; do
     PEM=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "KeyName")
     AUX_LAUNCH_TIME=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "LaunchTime")
     LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
-    ACTUAL_TIME=$(date "+%s")
-    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME -  7200 )))
+    ACTUAL_TIME=$(date -u "+%s")
+    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME )))
     echo -e "$INSTANCE_SELECTED;$NAME;$PLATFORM;$STATUS;$PEM;$INSTANCETYPE;$DNS;$UPTIME" >> $MENU_FILE
 
 done < $INSTANCES_FILE
@@ -295,7 +312,7 @@ rm -rf $MENU_FILE
 
     LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
     ACTUAL_TIME=$(date "+%s")
-    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME + 720 )))
+    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME )))
     echo -e "ID ;: $INSTANCE_SELECTED;Name ;: $NAME" >> $MENU_FILE
     echo -e "Platform ;: $PLATFORM;STATUS ;: $STATUS ($UPTIME)" >> $MENU_FILE
     echo -e "PublicIP ;: $PUBLIC_IP;PrivateIP ;: $PRIVATE_IP" >> $MENU_FILE
@@ -352,9 +369,11 @@ until [ "$selection" = "b" ]; do
              if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
              ssh -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress')
              read -n 1;;
-         2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
+         2 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
+             if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
+             read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
              read -er -p"Target path : "  TARGET_FILES
-             scp -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
+             scp -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
              read -n 1;;     
          3 ) read -er -p"Local Files : " SOURCE_FILES
              read -er -p"Target path in $PROFILE_SELECTED -> $INSTANCE_NAME : "  TARGET_FILES
