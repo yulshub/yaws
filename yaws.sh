@@ -186,7 +186,7 @@ while read INSTANCE_SELECTED; do
     AUX_LAUNCH_TIME=$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED "LaunchTime")
     LAUNCH_TIME=$(date -j -f "%Y-%m-%dT%T" "$AUX_LAUNCH_TIME" "+%s" 2>/dev/null)
     ACTUAL_TIME=$(date "+%s")
-    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME + 720 )))
+    UPTIME=$(displayTime $(( ACTUAL_TIME - LAUNCH_TIME -  7200 )))
     echo -e "$INSTANCE_SELECTED;$NAME;$PLATFORM;$STATUS;$PEM;$INSTANCETYPE;$DNS;$UPTIME" >> $MENU_FILE
 
 done < $INSTANCES_FILE
@@ -348,7 +348,10 @@ until [ "$selection" = "b" ]; do
          b ) break;;
          q ) clear;exit 0;;
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
-         1 ) ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress');;   
+         1 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
+             if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
+             ssh -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress')
+             read -n 1;;
          2 ) read -er -p"Files in $PROFILE_SELECTED -> $INSTANCE_NAME : " SOURCE_FILES
              read -er -p"Target path : "  TARGET_FILES
              scp -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
