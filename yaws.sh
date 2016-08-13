@@ -19,6 +19,8 @@ EC2_INSTANCES_SCREEN_DETAILS_FILE="$CONFIG_PATH/ec2_instances_screen_details"
 bold=$(tput bold)
 red=$(tput setaf 1)
 green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
 reset=$(tput sgr0)
 
 #********************************************************************************************************************************************************** 
@@ -223,7 +225,7 @@ echo "--------------------------------------------------------------------------
 if [ ! -f $MENU_FILE ]; then 
     echo -e "No info to show. Check your credentials for profile ${bold}$PROFILE_SELECTED${reset}"
 else
-    cat -n $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
+    cat -n $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g" | sed "s/stopping/${red}stopping${reset}/g"  | sed "s/pending/${yellow}pending${reset}/g"
 fi
 #lines 30 $(wc -l $MENU_FILE)
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
@@ -346,7 +348,7 @@ echo -e "AWS EC2 INSTANCES MENU"
 echo -e "SELECTED PROFILE : ${bold}$PROFILE_SELECTED${reset}"
 echo -e "SELECTED INSTANCE : ${bold}$INSTANCE_SELECTED / $INSTANCE_NAME${reset}"
 echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
-cat $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g"
+cat $MENU_FILE | column -t -s ";" | sed "s/running/${green}running${reset}/g" | sed "s/stopped/${red}stopped${reset}/g" | sed "s/stopping/${red}stopping${reset}/g"  | sed "s/pending/${yellow}pending${reset}/g"
 
 
 }
@@ -423,6 +425,8 @@ INSTANCE_NAME=$3
 echo ""
 echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
 echo -e "1. Reboot instance"
+echo -e "2. Stop instance"
+echo -e "3. Start instance"
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 echo -n -e "Choose Option | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
 }
@@ -442,6 +446,8 @@ until [ "$selection" = "b" ]; do
          q ) clear;exit 0;;
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) aws ec2 reboot-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
+         2 ) aws ec2 stop-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
+         3 ) aws ec2 start-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
          * ) continue;;
      esac
 
