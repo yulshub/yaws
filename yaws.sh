@@ -90,8 +90,55 @@ fi
 sort -f $PROFILE_LIST_FILE -o $PROFILE_LIST_FILE 
 }
 
+function DeleteProfileAction
+{
+PROFILE_SELECTED=$1
 
-function printProfilesMENU
+REAL_PROFILE_NAME=$(grep -i ${PROFILE_SELECTED} ~/.aws/credentials | sed "s/\[//g" | sed "s/\]//g")
+BEGIN_LINE=$(sed -n "\|\[${REAL_PROFILE_NAME}\]|=" ~/.aws/credentials)
+
+#Check if is the last profile in file
+
+NUMBER_OF_LINES_NEXT_PROFILE=$(sed -n "/\[${REAL_PROFILE_NAME}\]/,/^\[/p" ~/.aws/credentials | wc -l)
+NUMBER_OF_LINES_EOF=$(sed -n "/\[${REAL_PROFILE_NAME}\]/,/EOF/p" ~/.aws/credentials | wc -l)
+
+if [ "${NUMBER_OF_LINES_EOF}" -gt "${NUMBER_OF_LINES_NEXT_PROFILE}" ]; then
+    END_LINE=$(expr ${BEGIN_LINE} + ${NUMBER_OF_LINES_NEXT_PROFILE} - 2)
+else
+    END_LINE=$(expr ${BEGIN_LINE} + ${NUMBER_OF_LINES_EOF} - 1)
+fi
+
+sed -i".bak" "${BEGIN_LINE},${END_LINE}d" ~/.aws/credentials
+rm ~/.aws/credentials.bak
+}
+
+
+function DeleteProfileOption
+{
+until [ "$selection" = "q" ]; do
+     printManageProfilesActionMENUFooter
+     read -r -n 2 selection
+     echo ""
+     case $selection in
+         q ) clear;exit 0;;
+         b ) break;;
+         r ) printManageProfileMENU;;
+         * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
+                PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
+                echo "Profile selected to delete: $PROFILE"
+                DeleteProfileAction $PROFILE
+            fi;;
+     esac
+done
+}
+
+function printManageProfilesActionMENUFooter
+{
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo -n "Choose profile | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
+}
+
+function printProfilesMENUHeader
 {
 clear
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
@@ -99,21 +146,40 @@ echo -e " ${bold}AWS PROFILES MENU : ${red}EC2 Mode${reset}"
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 cat -n $PROFILE_LIST_FILE
 #lines 40 35
-echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
-echo -n "Choose profile | ${bold}${green}r${reset}efresh | ${bold}${red}q${reset}uit: "
 }
+
+function printProfilesMENUFooter
+{
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo -n "Choose profile | ${bold}${blue}m${reset}anage profiles | ${bold}${green}r${reset}efresh | ${bold}${red}q${reset}uit: "
+}
+
+function printManageProfilesMENUFooter
+{
+echo ""
+echo "+--------------------------------------------------------------------------------------------------------------------------------------------------------+"
+echo -e "1. Create new profile"
+echo -e "2. Delete profile"
+echo -e "3. Change region profile"
+echo -e "4. Edit profile settings"
+echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
+echo -n -e "Choose Option | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
+}
+
 
 function profilesMenu
 {
 MODE=$1
 createProfilesMenu
 until [ "$selection" = "q" ]; do
-     printProfilesMENU
+     printProfilesMENUHeader
+     printProfilesMENUFooter
      read -r -n 2 selection
      echo ""
      case $selection in
          q ) clear;exit 0;;
          r ) createProfilesMenu;;
+         m ) printManageProfileMENU;;
          * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
                 PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
                 echo "Perfil seleccionado : $PROFILE"
@@ -212,6 +278,29 @@ done < $INSTANCES_FILE
 sort -k 2 -t';' -f $MENU_FILE -o $MENU_FILE
 
 }
+
+function printManageProfileMENU
+{
+MODE=$1
+createProfilesMenu
+until [ "$selection" = "q" ]; do
+     printProfilesMENUHeader
+     printManageProfilesMENUFooter
+     read -r -n 1 selection
+     echo ""
+     case $selection in
+         q ) clear;exit 0;;
+         b ) break;;
+         r ) createProfilesMenu;;
+         1 ) echo "1";;
+         2 ) DeleteProfileOption;;
+         3 ) echo "3";;
+         4 ) echo "4";;
+     esac
+done
+
+}
+
 
 function printEC2InstancesMENU 
 {
