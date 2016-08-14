@@ -169,7 +169,6 @@ echo -n -e "Choose Option | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack
 
 function profilesMenu
 {
-MODE=$1
 createProfilesMenu
 until [ "$selection" = "q" ]; do
      printProfilesMENUHeader
@@ -281,7 +280,6 @@ sort -k 2 -t';' -f $MENU_FILE -o $MENU_FILE
 
 function printManageProfileMENU
 {
-MODE=$1
 createProfilesMenu
 until [ "$selection" = "q" ]; do
      printProfilesMENUHeader
@@ -292,10 +290,10 @@ until [ "$selection" = "q" ]; do
          q ) clear;exit 0;;
          b ) break;;
          r ) createProfilesMenu;;
-         1 ) echo "1";;
+         1 ) echo "Create Profile";;
          2 ) DeleteProfileOption;;
-         3 ) echo "3";;
-         4 ) echo "4";;
+         3 ) echo "Change region profile";;
+         4 ) echo "Edit profile settings";;
      esac
 done
 
@@ -553,9 +551,11 @@ if [ -z $1 ];then usage; exit 1 ; fi
 while [ "$1" != "" ]; do
     case $1 in
         -e | --ec2 )            shift
-                                profilesMenu EC2
+                                MODE="EC2"
+                                profilesMenu
                                 ;;
-        -d | --database )       profilesMenu DATABASE
+        -d | --database )       MODE="DATABASE"
+                                profilesMenu
                                 ;;
         -h | --help )           usage
                                 exit
