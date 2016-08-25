@@ -82,7 +82,7 @@ echo $OLSONTZ
 function createProfilesMenu
 {
 #Perfiles de AWS
-cat ~/.aws/credentials | grep "\\[" | grep -v default | sed "s/\[//g" | sed "s/\]//g"  | tr '[:lower:]' '[:upper:]' > $PROFILE_LIST_FILE
+cat ~/.aws/credentials | grep "\\[" | grep -v default | sed "s/\[//g" | sed "s/\]//g"  > $PROFILE_LIST_FILE
 if [ ! -s ${PROFILE_LIST_FILE} ]; then
     echo "No profile found in ~/.aws/credentials"
     exit 1
@@ -144,7 +144,7 @@ clear
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
 echo -e " ${bold}AWS PROFILES MENU : ${red}EC2 Mode${reset}"
 echo "----------------------------------------------------------------------------------------------------------------------------------------------------------"
-cat -n $PROFILE_LIST_FILE
+cat -n $PROFILE_LIST_FILE | tr '[:lower:]' '[:upper:]'
 #lines 40 35
 }
 
