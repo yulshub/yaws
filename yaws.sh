@@ -474,7 +474,7 @@ until [ "$selection" = "b" ]; do
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
              if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
-             ssh -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress')
+             ssh -o StrictHostKeyChecking=no -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress')
              read -n 1;;
          2 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
              if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
@@ -487,13 +487,13 @@ until [ "$selection" = "b" ]; do
              scp -i "$(head -1 $PEM_FILE)" $SOURCE_FILES ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$TARGET_FILES
              read -n 1;;     
          4 ) read -er -p"Type command : " COMMAND
-             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') $COMMAND
+             ssh -o StrictHostKeyChecking=no -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') $COMMAND
              read -n 1;;              
          5 ) read -er -p"Type absolute path to log : " LOG_PATH
-             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') less $LOG_PATH
+             ssh -o StrictHostKeyChecking=no  -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') less $LOG_PATH
              read -n 1;;  
          6 ) read -er -p"Write filter, empty to all : " GREP_FILTER
-             ssh -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') ps -fea | grep "$GREP_FILTER"
+             ssh -o StrictHostKeyChecking=no -i "$(head -1 $PEM_FILE)" ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress') ps -fea | grep "$GREP_FILTER"
              read -n 1;;
          7 ) echo "Network tools";;   
          8 ) echo "Monitoring tools";;   
