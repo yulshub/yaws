@@ -482,7 +482,9 @@ until [ "$selection" = "b" ]; do
              read -er -p"Target path : "  TARGET_FILES
              scp -i "$(head -1 $PEM_FILE)" $USERNAME@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$SOURCE_FILES $TARGET_FILES
              read -n 1;;     
-         3 ) read -er -p"Local Files : " SOURCE_FILES
+         3 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
+             if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
+             read -er -p"Local Files : " SOURCE_FILES
              read -er -p"Target path in $PROFILE_SELECTED -> $INSTANCE_NAME : "  TARGET_FILES
              scp -i "$(head -1 $PEM_FILE)" $SOURCE_FILES ubuntu@$(getPropertyEC2Instance $PROFILE_SELECTED $INSTANCE_SELECTED 'PublicIpAddress'):$TARGET_FILES
              read -n 1;;     
