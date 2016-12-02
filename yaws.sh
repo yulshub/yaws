@@ -200,9 +200,9 @@ until [ "$selection" = "q" ]; do
                 if [ -z "$region" ]; then
                     PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
                     echo "Perfil seleccionado : $PROFILE"
-                    cat .aws/config | sed -n "/$PROFILE/,\$p" | sed -n '2,3 p' > /home/celso/DATOSPROFILE.txt
+                    cat .aws/config | sed -n "/$PROFILE/,\$p" | sed -n '2,3 p' > /tmp/DATOSPROFILE.txt
                     sed -i '/region/ s/region/#region/g' .aws/config
-                    REGION=$(cat /home/celso/DATOSPROFILE.txt | egrep "region = [a-z][a-z]-[a-z]*-[1-2]")
+                    REGION=$(cat /tmp/DATOSPROFILE.txt | egrep "region = [a-z][a-z]-[a-z]*-[1-2]")
                     sed -i "/$PROFILE]/ s/$PROFILE]/$PROFILE]\n $REGION/g" .aws/config
                     sed -i 's/^ *//g' .aws/config
                     case $MODE in
