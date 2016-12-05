@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="b0.0.14"
+VERSION="b0.0.15"
 PID=$$
 CONFIG_PATH="$HOME/.yaws/$PID"
 STATIC_PATH="$HOME/.yaws/static"
@@ -74,6 +74,22 @@ fi
 echo $OLSONTZ
 }
 
+function configcopy
+{
+cp .aws/config .aws/config-copy
+}
+
+configcopy
+
+function ctrlc
+{
+cp .aws/config-copy .aws/config
+exit 0
+}
+
+trap ctrlc INT
+trap ctrlc EXIT
+trap ctrlc CONT
 
 #********************************************************************************************************************************************************** 
 # PROFILES
@@ -166,7 +182,6 @@ echo "--------------------------------------------------------------------------
 echo -n -e "Choose Option | ${bold}${green}r${reset}efresh | ${bold}b${reset}ack | ${bold}${red}q${reset}uit: "
 }
 
-
 function profilesMenu
 {
 createProfilesMenu
@@ -180,13 +195,33 @@ until [ "$selection" = "q" ]; do
          r ) createProfilesMenu;;
          m ) printManageProfileMENU;;
          * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
-                PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
-                echo "Perfil seleccionado : $PROFILE"
-                case $MODE in
-                    EC2 ) EC2InstancesMenu $PROFILE;;
-                    DATABASE ) continue;;
-                esac
-            fi;;
+                echo "Introduce la región en la que quieras trabajar:"
+                read -r region
+                if [ -z "$region" ]; then
+                    PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
+                    echo "Perfil seleccionado : $PROFILE"
+                    cat .aws/config | sed -n "/$PROFILE/,\$p" | sed -n '2,3 p' > /tmp/DATOSPROFILE.txt
+                    sed -i '/region/ s/region/#region/g' .aws/config
+                    REGION=$(cat /tmp/DATOSPROFILE.txt | egrep "region = [a-z][a-z]-[a-z]*-[1-2]")
+                    sed -i "/$PROFILE]/ s/$PROFILE]/$PROFILE]\n $REGION/g" .aws/config
+                    sed -i 's/^ *//g' .aws/config
+                    case $MODE in
+                        EC2 ) EC2InstancesMenu $PROFILE;;
+                        DATABASE ) continue;;
+                    esac
+                fi
+                if [[ $region =~ us-west-[1-2] ]] || [[ $region =~ us-east-[1-2] ]] || [[ $region =~ eu-west-1 ]] || [[ $region =~ eu-central-1 ]] || [[ $region =~ ap-northeast-[1-2] ]] || [[ $region =~ ap-southeast-[1-2] ]] || [[ $region =~ ap-south-1 ]] || [[ $region =~ sa-east-1 ]]; then
+                    sed -i '/region/ s/region/#region/g' .aws/config
+                    TMP=$(sed "$selection!d" $PROFILE_LIST_FILE)
+                    sed -i "/$TMP]/ s/$TMP]/$TMP]\nregion = $region/g" .aws/config
+                    PROFILE=$(sed "$selection!d" $PROFILE_LIST_FILE)
+                    echo "Perfil seleccionado : $PROFILE"
+                    case $MODE in
+                        EC2 ) EC2InstancesMenu $PROFILE;;
+                        DATABASE ) continue;;
+                    esac
+                fi
+             fi;;
      esac
 done
 }
@@ -287,8 +322,8 @@ until [ "$selection" = "q" ]; do
      read -r -n 1 selection
      echo ""
      case $selection in
-         q ) clear;exit 0;;
-         b ) break;;
+         q ) clear;sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;exit 0;;
+         b ) sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;break;;
          r ) createProfilesMenu;;
          1 ) echo "Create Profile";;
          2 ) DeleteProfileOption;;
@@ -328,8 +363,8 @@ until [ "$selection" = "b" ]; do
      printEC2InstancesMENU $PROFILE_SELECTED
      read -r -n 2 selection
      case $selection in
-         b ) break;;
-         q ) clear;exit 0;;
+         b ) sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;break;;
+         q ) clear;sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;exit 0;;
          r ) createEC2InstancesMENU $PROFILE_SELECTED;;
              #read -n 1;;
          * ) if [[ $selection =~ ^-?[0-9]+$ ]];then
@@ -469,8 +504,8 @@ until [ "$selection" = "b" ]; do
      read -n 1 selection
      echo ""
      case $selection in
-         b ) break;;
-         q ) clear;exit 0;;
+         b ) sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;break;;
+         q ) clear;sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;exit 0;;
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) read -er -p"Username (Enter -> ubuntu) : " USERNAME
              if [ -z "$USERNAME" ];then USERNAME="ubuntu"; fi 
@@ -531,8 +566,8 @@ until [ "$selection" = "b" ]; do
      read -n 1 selection
      echo ""
      case $selection in
-         b ) break;;
-         q ) clear;exit 0;;
+         b ) sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;break;;
+         q ) clear;sed -i '/^region/d' .aws/config;sed -i 's/^#*//g' .aws/config;exit 0;;
          r ) createEC2DetailsScreen $PROFILE_SELECTED $INSTANCE_SELECTED;;
          1 ) aws ec2 reboot-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
          2 ) aws ec2 stop-instances --instance-ids $INSTANCE_SELECTED --profile $PROFILE_SELECTED;;
